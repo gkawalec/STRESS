@@ -28,7 +28,7 @@ void setup() {
     pinMode(HRPin2,INPUT); //Output 2 (Filtered More- if we so choose)
     pinMode(HRPin1,INPUT); //Output 1 
     pinMode(HRPinRef,INPUT); //Reference
-
+}    
 
 void loop() {
     analog_test_x = analogRead(PinX);
