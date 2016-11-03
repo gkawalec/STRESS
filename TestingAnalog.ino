@@ -1,6 +1,7 @@
 // Code to test for inputs from HR or Accelerometer
 
 void blink(void);
+void pin_blink_led( const int& PIN , const int& VALUE, const int& LED )
 bool blinking = 0;
 
 //Pin Names:
@@ -65,7 +66,7 @@ void loop() {
     
 }
 
-void pin_blink_led( PIN , VALUE, LED ,  )
+void pin_blink_led( PIN , VALUE, LED )
 {
     ( analogRead(PIN) >= VALUE ) ? digitalWrite(LED, HIGH) && delay(500) : digitalWrite(LED, LOW);
 }
