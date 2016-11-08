@@ -20,7 +20,9 @@ int analog_test_z;
 int analog_test_output2;
 int analog_test_output1;
 int analog_test_reference;
-
+int write = 0;
+double HR_data = 0;
+double AR_data =0;
 
 
 
@@ -40,6 +42,11 @@ void setup() {
     //attachInterrupt(HRPin2, blink, RISING);
     
     Particle.variable("Blinking", blinking);
+    Particle.variable("write", &write, INT);
+    Particle.variable("HR_data", &HR_data, DOUBLE);
+    Particle.variable("AR_data", &AR_data, DOUBLE);
+
+
 }    
 
 void loop() {
