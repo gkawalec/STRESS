@@ -38,10 +38,12 @@ void setup() {
     pinMode(led, OUTPUT);
     //other way
     //attachInterrupt(HRPin2, blink, RISING);
+    
+    Particle.variable("Blinking", blinking);
 }    
 
 void loop() {
-    
+    blinking = false;
     //Read
     analog_test_x = analogRead(PinX);
     analog_test_y = analogRead(PinY);
@@ -51,25 +53,35 @@ void loop() {
     analog_test_output1 = analogRead(HRPin1);
     analog_test_reference = analogRead(HRPinRef);
 
-    if ( analog_test_output2 > 2000) {
+/*
+        if ( analog_test_output2 > 370) {
         digitalWrite(led, HIGH);
+        delay(500);
     }
-    if ( analog_test_output2 <= 2000) {
+    if ( analog_test_output2 <= 370) {
         digitalWrite(led, LOW);
     }
-    //pin_blink_led(HRPin2, 2000, led);
+*/
+    pin_blink_led(analog_test_output2, 370, led);
+    // 2000 = 1.623 V
+    // test val 370 = 0.3 V
     delayMicroseconds(50); // short to find peak
-    
-
-        
     
     
 }
 
-void pin_blink_led( int PIN , int VALUE, int LED )
+void pin_blink_led( int& PIN , int VALUE, int& LED )
 {
-    ( analogRead(PIN) >= VALUE ) ? digitalWrite(LED, HIGH) : digitalWrite(LED, LOW);
-    delay(500);
+    if ( PIN > VALUE ) {
+        digitalWrite(LED, HIGH);
+        blinking = TRUE;
+        delay(500);
+    }
+    if ( PIN <= VALUE) {
+        digitalWrite(LED, LOW);
+        blinking = FALSE;
+    }
+
 }
 
 
