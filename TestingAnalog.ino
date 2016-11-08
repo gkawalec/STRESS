@@ -82,7 +82,7 @@ void pin_blink_led( int& PIN , int VALUE, int& LED )
     if ( PIN > VALUE ) {
         digitalWrite(LED, HIGH);
         blinking = TRUE;
-        delay(500);
+        delay(2000);
     }
     if ( PIN <= VALUE) {
         digitalWrite(LED, LOW);
