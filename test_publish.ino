@@ -13,7 +13,7 @@ void loop() {
     char upload[255] = {0};
     int i = 0;
     int j = 120;
-	while (i < 119 && j < 240){
+	while (j < 240){
 		double input = Get_Input(HR_AR);
 		bool error = 0;
 		//This will write HR values (using i as an index keeper)
