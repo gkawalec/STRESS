@@ -1,303 +1,267 @@
+
 #ifndef UPLOAD_H
 #define UPLOAD_H
 
-
-double Get_Input(bool&); // will get the input based on an alternating value to select AR or HR
-void upload();
-
-bool HR_AR = 1; //to get HR this will equal 1, to get AR, it will be 0
-int testing = 0; //CAN BE REMOVED FOR REAL CODE
-
-
 class Upload{
-    public:
-        Upload();
-        char upload[255];
-        
+public:
+	Upload();
+	char upload[255];
+	void write(double input, bool HR_AR); //will write input to correct place in char upload[], based on a value of 0 for HR and 1 for AR
+	void publish(); //publishes char upload[] to cloud
+	void reset(); //resets all the values of the class
+	int HR_int;
+	int AR_int;
+	int HR_col;
+	int AR_col;
 };
 
-Upload data;
-data.upload == upload[255];
 
-Upload::get_input()
-{
-    
+void Upload::reset(){
+	Upload temp;
+	*this = temp;
 }
-
-Upload::write()
-{
-    
-}
-
 Upload::Upload() // default constructor
 {
-    char upload = {0};
+	char upload = { 0 };
+	HR_int = 0;
+	AR_int = 120;
+	HR_col = 0;
+	AR_col = 0;
 }
 
+void Upload::publish(){
+	// publish data here
+	//Particle.variable("Stress", upload);
+	//Particle.publish("Stress", upload);
+	//delay(10000);
 
-double Get_Input(bool& HR_AR)
+}
+
+void Upload::write(double input, bool HR_AR)
 {
-	if (HR_AR){
-		//double HR = 1000.23 + 100 * testing; //For test purposes only!!
-		//Add function for interpreting HR here
-		//
-		//
-		
-		HR_AR = 0;
-		return HR_bpm;
+
+	//This will write HR values (using HR_int as an index keeper)
+	//
+	//
+	if (HR_AR==false){
+		int count = 0;
+		if (input >= 10000){ // values in excess of 10,000 will write an error message
+			input = -10000;
+		}
+		if (input == 0 || (input < 0.01&& input >0)){
+			upload[HR_int] = '0';
+			HR_int++;
+			count++;
+		}
+		if (input >= 1000){
+			int temp = (int)input / 1000;
+			upload[HR_int] = 48 + temp;
+			input -= temp * 1000;
+			HR_int++;
+			count++;
+			if (input < 100){
+				upload[HR_int] = '0';
+				HR_int++;
+				count++;
+				if (input < 10){
+					upload[HR_int] = '0';
+					HR_int++;
+					count++;
+					if (input < 1){
+						upload[HR_int] = '0';
+						HR_int++;
+						count++;
+					}
+				}
+			}
+		}
+
+		if (input >= 100){
+			int temp = (int)input / 100;
+			upload[HR_int] = 48 + temp;
+			input -= temp * 100;
+			HR_int++;
+			count++;
+			if (input < 10){
+				upload[HR_int] = '0';
+				HR_int++;
+				count++;
+				if (input < 1){
+					upload[HR_int] = '0';
+					HR_int++;
+					count++;
+				}
+			}
+		}
+		if (input >= 10){
+			int temp = (int)input / 10;
+			upload[HR_int] = 48 + temp;
+			input -= temp * 10;
+			HR_int++;
+			count++;
+			if ((int)input == 0){
+				upload[HR_int] = (int)input + 48;
+				HR_int++;
+				count++;
+			}
+
+		}
+		if (input >= 1){
+			int temp = (int)input;
+			upload[HR_int] = 48 + temp;
+			input -= temp;
+			HR_int++;
+			count++;
+		}
+		if (input > 0){
+			int temp = (int)(input * 10);
+			upload[HR_int] = '.';
+			upload[++HR_int] = 48 + temp;
+			input = input * 100 - temp * 10;
+			count += 2;
+			HR_int++;
+			if (input != 0){
+				upload[HR_int] = 48 + (int)input;
+				count++;
+				HR_int++;
+			}
+		}
+		if (input < 0){ //Negative values will give an error message
+			upload[HR_int] = 'E';
+			upload[++HR_int] = 'R';
+			upload[++HR_int] = 'R';
+			upload[++HR_int] = 'O';
+			upload[++HR_int] = 'R';
+			count = 5;
+			HR_int++;
+			input = 0;
+		}
+
+		while (count < 8){ //this ensures there will be 8 digits in the string for every reading, and a blank space between values
+			upload[HR_int] = ' ';
+			HR_int++;
+			count++;
+		}
+		HR_col++;
 	}
+	//This will write corresponding AR values (using AR_intas an index keeper
+	//
+	//
 	else{
-		double AR = 8000 + testing * 100; //For test purposes only!!
-		//Add function for interpreting AR here
-		//
-		//
-
-		HR_AR = 1;
-		return AR;
-	}
-}
-
-
-void upload() 
-{
-    char upload[255] = {0};
-    int i = 0;
-    int j = 120;
-	while (j < 240){
-		double input = Get_Input(HR_AR);
-		bool error = 0;
-		//This will write HR values (using i as an index keeper)
-		//
-		//
-		if (!HR_AR){
-			int count = 0;
-			if (input >= 10000){ // values in excess of 10,000 will write an error message
-				input = -10000;
-			}
-			if (input == 0 || (input < 0.01&& input >0)){
-				upload[i] = '0';
-				i++;
-				count++;
-			}
-			if (input >= 1000){
-				int temp = (int)input / 1000;
-				upload[i] = 48 + temp;
-				input -= temp * 1000;
-				i++;
-				count++;
-				if (input < 100){
-					upload[i] = '0';
-					i++;
-					count++;
-					if (input < 10){
-						upload[i] = '0';
-						i++;
-						count++;
-						if (input < 1){
-							upload[i] = '0';
-							i++;
-							count++;
-						}
-					}
-				}
-			}
-
-			if (input >= 100){
-				int temp = (int)input / 100;
-				upload[i] = 48 + temp;
-				input -= temp * 100;
-				i++;
-				count++;
-				if (input < 10){
-					upload[i] = '0';
-					i++;
-					count++;
-					if (input < 1){
-						upload[i] = '0';
-						i++;
-						count++;
-					}
-				}
-			}
-			if (input >= 10){
-				int temp = (int)input / 10;
-				upload[i] = 48 + temp;
-				input -= temp * 10;
-				i++;
-				count++;
-				if ((int)input == 0){
-					upload[i] = (int)input + 48;
-					i++;
-					count++;
-				}
-
-			}
-			if (input >= 1){
-				int temp = (int)input;
-				upload[i] = 48 + temp;
-				input -= temp;
-				i++;
-				count++;
-			}
-			if (input > 0){
-				int temp = (int)(input * 10);
-				upload[i] = '.';
-				upload[++i] = 48 + temp;
-				input = input * 100 - temp * 10;
-				count += 2;
-				i++;
-				if (input != 0){
-					upload[i] = 48 + (int)input;
-					count++;
-					i++;
-				}
-			}
-			if (input < 0){ //Negative values will give an error message
-				upload[i] = 'E';
-				upload[++i] = 'R';
-				upload[++i] = 'R';
-				upload[++i] = 'O';
-				upload[++i] = 'R';
-				count = 5;
-				i++;
-				input = 0;
-			}
-
-			while (count < 8){ //this ensures there will be 8 digits in the string for every reading, and a blank space between values
-				upload[i] = ' ';
-				i++;
-				count++;
-			}
+		int count = 0;
+		if (input >= 10000){ // values in excess of 10,000 will write an error message
+			input = -10000;
 		}
-		//This will write corresponding AR values (using j as an index keeper
-		//
-		//
-		else{
-			int count = 0;
-			if (input >= 10000){ // values in excess of 10,000 will write an error message
-				input = -10000;
-			}
-			if (input == 0 || (input < 0.01&& input >0)){
-				upload[j] = '0';
-				j++;
-				count++;
-			}
-			if (input >= 1000){
-				int temp = (int)input / 1000;
-				upload[j] = 48 + temp;
-				input -= temp * 1000;
-				j++;
-				count++;
-				if (input < 100){
-					upload[j] = '0';
-					j++;
-					count++;
-					if (input < 10){
-						upload[j] = '0';
-						j++;
-						count++;
-						if (input < 1){
-							upload[j] = '0';
-							j++;
-							count++;
-						}
-					}
-				}
-			}
-
-			if (input >= 100){
-				int temp = (int)input / 100;
-				upload[j] = 48 + temp;
-				input -= temp * 100;
-				j++;
+		if (input == 0 || (input < 0.01&& input >0)){
+			upload[AR_int] = '0';
+			AR_int++;
+			count++;
+		}
+		if (input >= 1000){
+			int temp = (int)input / 1000;
+			upload[AR_int] = 48 + temp;
+			input -= temp * 1000;
+			AR_int++;
+			count++;
+			if (input < 100){
+				upload[AR_int] = '0';
+				AR_int++;
 				count++;
 				if (input < 10){
-					upload[j] = '0';
-					j++;
+					upload[AR_int] = '0';
+					AR_int++;
 					count++;
 					if (input < 1){
-						upload[j] = '0';
-						j++;
+						upload[AR_int] = '0';
+						AR_int++;
 						count++;
 					}
 				}
-			}
-			if (input >= 10){
-				int temp = (int)input / 10;
-				upload[j] = 48 + temp;
-				input -= temp * 10;
-				j++;
-				count++;
-				if ((int)input == 0){
-					upload[j] = (int)input + 48;
-					j++;
-					count++;
-				}
-
-			}
-			if (input >= 1){
-				int temp = (int)input;
-				upload[j] = 48 + temp;
-				input -= temp;
-				j++;
-				count++;
-			}
-			if (input > 0){
-				int temp = (int)(input * 10);
-				upload[j] = '.';
-				upload[++j] = 48 + temp;
-				input = input * 100 - temp * 10;
-				count += 2;
-				j++;
-				if (input != 0){
-					upload[j] = 48 + (int)input;
-					count++;
-					j++;
-				}
-			}
-			if (input < 0){ //Negative values will give an error message
-				upload[j] = 'E';
-				upload[++j] = 'R';
-				upload[++j] = 'R';
-				upload[++j] = 'O';
-				upload[++j] = 'R';
-				count = 5;
-				j++;
-				input = 0;
-			}
-
-			while (count < 8){ //this ensures there will be 8 digits in the string for every reading, and a blank space between values
-				upload[j] = ' ';
-				j++;
-				count++;
 			}
 		}
 
+		if (input >= 100){
+			int temp = (int)input / 100;
+			upload[AR_int] = 48 + temp;
+			input -= temp * 100;
+			AR_int++;
+			count++;
+			if (input < 10){
+				upload[AR_int] = '0';
+				AR_int++;
+				count++;
+				if (input < 1){
+					upload[AR_int] = '0';
+					AR_int++;
+					count++;
+				}
+			}
+		}
+		if (input >= 10){
+			int temp = (int)input / 10;
+			upload[AR_int] = 48 + temp;
+			input -= temp * 10;
+			AR_int++;
+			count++;
+			if ((int)input == 0){
+				upload[AR_int] = (int)input + 48;
+				AR_int++;
+				count++;
+			}
 
+		}
+		if (input >= 1){
+			int temp = (int)input;
+			upload[AR_int] = 48 + temp;
+			input -= temp;
+			AR_int++;
+			count++;
+		}
+		if (input > 0){
+			int temp = (int)(input * 10);
+			upload[AR_int] = '.';
+			upload[++AR_int] = 48 + temp;
+			input = input * 100 - temp * 10;
+			count += 2;
+			AR_int++;
+			if (input != 0){
+				upload[AR_int] = 48 + (int)input;
+				count++;
+				AR_int++;
+			}
+		}
+		if (input < 0){ //Negative values will give an error message
+			upload[AR_int] = 'E';
+			upload[++AR_int] = 'R';
+			upload[++AR_int] = 'R';
+			upload[++AR_int] = 'O';
+			upload[++AR_int] = 'R';
+			count = 5;
+			AR_int++;
+			input = 0;
+		}
 
-		testing++; //REMOVE FOR ACTUAL CODE
+		while (count < 8){ //this ensures there will be 8 digits in the string for every reading, and a blank space between values
+			upload[AR_int] = ' ';
+			AR_int++;
+			count++;
+		}
+		AR_col++;
+
 	}
-	
-	
-	
-	Particle.variable("Stress", upload);
-	Particle.publish("Stress", upload);
-	delay(10000);
+
+	if (AR_col ==15 && HR_col == 15){
+		//upload data to cloud and reset
+		while (AR_int < 255){
+			upload[AR_int] = ' ';
+			AR_int++;
+		}
+		publish();
+		reset();
+	}
+
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
