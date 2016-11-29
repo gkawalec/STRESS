@@ -5,32 +5,41 @@ class Blink
 {
     public: 
         Blink();
-        unsigned long int mark;
+        unsigned long mark;
+        unsigned long target;
+        bool on;
         
         
     
     public:
         
-        void toggle( int & LED, unsigned long int LENGTH);
+        void toggle( int & LED, unsigned long LENGTH);
 
 };
 
 Blink::Blink()
 {
     mark = 0;
+    target = 0;
+    on = FALSE;
 }
 
 
-void Blink::toggle( int& LED ,  unsigned long int LENGTH )
+void Blink::toggle( int& LED ,  unsigned long LENGTH )
 {
 
-    if ( mark == 0 ){
+    if ( mark == 0 && millis() > target ){
         mark = millis();
-        digitalWrite(LED,HIGH);
+        target = mark+LENGTH;
+        digitalWrite(LED, HIGH);
+        Particle.publish("mark", "marked");
     }
-    else if ( millis() >= mark + LENGTH){
-        digitalWrite(LED,LOW);
+    if ( mark != 0 && millis() > target ){
         mark =0;
+        target = target+LENGTH; 
+        digitalWrite(LED, LOW);
+        Particle.publish("mark", "unmarked");
+
     }
 
 
