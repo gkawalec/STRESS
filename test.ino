@@ -1,7 +1,6 @@
 // This #include statement was automatically added by the Particle IDE.
 #include "Blink.h"
 
-extern float HR_bpm = 0;
 
 // This #include statement was automatically added by the Particle IDE.
 #include "Upload.h"
@@ -11,9 +10,7 @@ extern float HR_bpm = 0;
 
 // Code to test for inputs from HR or Accelerometer
 
-void blink(void);
-void pin_blink_led( const int & , const int &, const int &, const int & );
-bool blinking = 0;
+#include <cmath>
 
 //Pin Names:
 int PinX = A2;
@@ -23,6 +20,7 @@ int HRPin2 = A4;
 int HRPin1 = A2;
 int HRPinRef = A1;
 int led = D6;
+int builtinled = D7;
 
 //test values:
 int analog_test_x;
@@ -31,20 +29,34 @@ int analog_test_z;
 int analog_test_output2;
 int analog_test_output1;
 int analog_test_reference;
-int write = 0;
-double HR_data = 0;
-double AR_data =0;
+
+
+
+
+
+int temp =0;
+
+const int HR_numsamples = 4;
+int HR_beattime[HR_numsamples] = {0};
 int HR_floor = 2400;
 int HR_ceiling = 3500;
 int HR_temp = 0;
-int temp = 0;
+int HR_pos = 0;
 
-uint16_t HR_avg[16] = {};
-uint16_t AR_avg[16] = {}; 
 
-int HR_beattime[16] = {0};
-int HR_index = 0;
+const int AR_numsamples = HR_numsamples*4;
+float AR_mag[AR_numsamples] = {0};
+double AR_rms = 0;
+int AR_pos = 0;
+
+
+
+
+
+void blink();
 Blink blinker;
+Segment display;
+Upload cache;
 
 
 
@@ -60,26 +72,26 @@ void setup() {
     
     // LED
     pinMode(led, OUTPUT);
+    pinMode(builtinled, OUTPUT);
     //other way
     //attachInterrupt(HRPin2, blink, RISING);
     
+    
+    
 
-    Particle.variable("Blinking", blinking);
-    Particle.variable("write", &write, INT);
+    //Particle.variable("write", &write, INT);
 
-    Particle.variable("HR_data", &HR_data, DOUBLE);
-    Particle.variable("AR_data", &AR_data, DOUBLE);
+    //Particle.variable("HR_data", &HR_data, DOUBLE);
+    //Particle.variable("AR_data", &AR_data, DOUBLE);
 
-
-    Wire.begin();
-
-
-
+//    Wire.begin();
+//    delay(500);
+//    display.prime_all();
+    
 }    
 
 void loop() {
     
-    blinking = false;
     //Read
     analog_test_x = analogRead(PinX);
     analog_test_y = analogRead(PinY);
@@ -88,6 +100,52 @@ void loop() {
     analog_test_output2 = analogRead(HRPin2);
     analog_test_output1 = analogRead(HRPin1);
     analog_test_reference = analogRead(HRPinRef);
+
+    
+    int HR_posprev = ( HR_pos+ (HR_numsamples -2) ) % (HR_numsamples -1);
+    HR_temp = 0;
+    //collect sample set 
+    if (analog_test_output2 > HR_floor){
+
+        if ( micros() - HR_beattime[HR_posprev] > 50  ){
+            blinker.toggle(led, 200000);
+            HR_beattime[HR_pos] = micros();
+            HR_pos++;
+            HR_pos = HR_pos %4;
+        }
+    }
+    if (HR_pos == HR_numsamples -1 ) {
+        for ( int i = 0; i < HR_numsamples - 1; i++){
+            HR_temp += (HR_beattime[i]-HR_beattime[i-1]);
+        }
+        HR_temp = HR_temp/(HR_numsamples -1);
+        cache.write( (double) 60000000/HR_temp, FALSE ) ; //period to BPM;
+    }
+    blinker.toggle(builtinled, 0);
+    
+    
+    if ( micros() > cache.AR_writetime + 250000){
+        AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
+        AR_pos = (AR_pos+1)% (AR_numsamples-1);
+    }
+    AR_rms = 0;
+    if (AR_pos == HR_pos*4 -1 && AR_pos > AR_numsamples - 3) //3 is a fudge factor
+    {
+        for (int i = 0; i < AR_numsamples -1 ; i++){
+            AR_rms += sqrt(AR_mag[i]);
+        }
+        AR_rms = AR_rms/AR_numsamples;
+        cache.write( AR_rms, TRUE);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+   // upload();
 
 /*
         if ( analog_test_output2 > 370) {
@@ -102,55 +160,24 @@ void loop() {
     //pin_blink_led(analog_test_output2, 2400, 3500, led);
     // 2000 = 1.623 V
     // test val 370 = 0.3 V    
-    
-    /* 
-    // I2C test
-    digitalWrite(led, HIGH);
-    Wire.beginTransmission( 32 );
-    // board stuck here ^, no ack to respond and move on
-    Wire.write( 2 );
-    Wire.write( 15 );
-    Wire.endTransmission();
-    digitalWrite(led, LOW);
-    */
-    delayMicroseconds(1000); // short to find peak
-    blinker.toggle(led, 200);
-    
-    
-    
-    int prev = (temp+16) % 16;
-    HR_temp = 0;
-    if (analog_test_output2 > HR_floor){
-        blinker.toggle(led, 200);
-        if ( micros() - HR_beattime[prev] > 50  ){
-            HR_beattime[temp] = micros();
-            temp++;
-            temp = temp %16;
-        }
-    }
-    if (temp == 15) {
-        for ( int i = 1; i < temp+1; i++){
-            HR_temp += (HR_beattime[i]-HR_beattime[i-1]);
-        }
-        HR_temp = HR_temp/15;
-    }
-    
-    HR_bpm = 60000000/HR_temp; //period to BPM;
-    
-   // upload();
+
+
+//    display.display(0, display.tf('0'));
+//    display.display(1, display.w_dp(display.tf('0')));
+//    display.display(2, 0b11000000);
+//delayMicroseconds(1000); // short to find peak
+//    blinker.toggle(builtinled, 2000000);
+
+
     
 }
 
-
-
-
-
-void blink ()
-{
-    if ( blinking == false ) {
-        blinking = true;
-        digitalWrite(led, HIGH);
-        delay(200);
-        digitalWrite(led, LOW);
-    }
+void blink ()		} 
+{		
+    if ( blinking == false ) {		
+        blinking = true;		
+        digitalWrite(led, HIGH);		
+        delay(200);		
+        digitalWrite(led, LOW);		
+    }		
 }
