@@ -50,10 +50,9 @@ double AR_rms = 0;
 int AR_pos = 0;
 
 
-
-
-
 void blink();
+bool blinking = FALSE;
+
 Blink blinker;
 Segment display;
 Upload cache;
@@ -172,7 +171,7 @@ void loop() {
     
 }
 
-void blink ()		} 
+void blink ()		 
 {		
     if ( blinking == false ) {		
         blinking = true;		
