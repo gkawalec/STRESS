@@ -36,11 +36,12 @@ int analog_test_reference;
 
 int temp =0;
 
-const int HR_numsamples = 4;
+const unsigned long write_interval = 4000000;
+const int HR_numsamples = 8;
 int HR_beattime[HR_numsamples] = {0};
 int HR_floor = 2400;
 int HR_ceiling = 3500;
-int HR_temp = 0;
+int HR_bpm = 0;
 int HR_pos = 0;
 
 
@@ -102,32 +103,38 @@ void loop() {
 
     
     int HR_posprev = ( HR_pos+ (HR_numsamples -2) ) % (HR_numsamples -1);
-    HR_temp = 0;
+
     //collect sample set 
     if (analog_test_output2 > HR_floor){
-
-        if ( micros() - HR_beattime[HR_posprev] > 50  ){
+        if ( micros() - HR_beattime[HR_posprev] > 1050  ){
             blinker.toggle(led, 200000);
             HR_beattime[HR_pos] = micros();
-            HR_pos++;
-            HR_pos = HR_pos %4;
+            HR_pos = (HR_pos+1) %(HR_numsamples-1);
         }
     }
-    if (HR_pos == HR_numsamples -1 ) {
+    if (micros() > cache.HR_writetime + write_interval - (unsigned long) 500000 ) {
+        int i = HR_numsamples-1;
+        for ( i; micros() > HR_beattime[i] + write_interval; (i+ HR_numsamples -2)%(HR_numsamples-1) ){
+            HR_bpm += (HR_beattime[i]-HR_beattime[(i+ HR_numsamples -2)%(HR_numsamples-1)]);
+        }
+/*
         for ( int i = 0; i < HR_numsamples - 1; i++){
-            HR_temp += (HR_beattime[i]-HR_beattime[i-1]);
+            HR_bpm += (HR_beattime[i]-HR_beattime[i-1]);
         }
-        HR_temp = HR_temp/(HR_numsamples -1);
-        cache.write( (double) 60000000/HR_temp, FALSE ) ; //period to BPM;
+*/
+        HR_bpm = HR_bpm/(HR_numsamples - i );
+        cache.write( (double) 60000000/HR_bpm, FALSE ) ; //period to BPM;
+        HR_bpm = 0;
     }
-    blinker.toggle(builtinled, 0);
+    blinker.toggle(led, 0);
     
     
     if ( micros() > cache.AR_writetime + 250000){
         AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
         AR_pos = (AR_pos+1)% (AR_numsamples-1);
     }
-    AR_rms = 0;
+    
+
     if (AR_pos == HR_pos*4 -1 && AR_pos > AR_numsamples - 3) //3 is a fudge factor
     {
         for (int i = 0; i < AR_numsamples -1 ; i++){
@@ -135,9 +142,10 @@ void loop() {
         }
         AR_rms = AR_rms/AR_numsamples;
         cache.write( AR_rms, TRUE);
+        AR_rms = 0;
     }
     
-    
+    delayMicroseconds(1000);
     
     
     
