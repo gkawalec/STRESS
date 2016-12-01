@@ -123,7 +123,7 @@ void loop() {
     }
     
     //Write to HR cache
-    if (micros() > cache.HR_writetime + write_interval - (unsigned long) 500000 ) {
+    if (micros() > cache.HR_writetime + write_interval - (unsigned long) 50000 ) {
         int i = HR_numsamples-1;
         for ( i; micros() > HR_beattime[i] + write_interval; (i+ HR_numsamples -2)%(HR_numsamples-1) ){
             HR_bpm += (HR_beattime[i]-HR_beattime[(i+ HR_numsamples -2)%(HR_numsamples-1)]);
@@ -138,8 +138,9 @@ void loop() {
         HR_bpm = 0;
     }
     //Write to AR cache
-    if (micros() > cache.AR_writetime + write_interval - (unsigned long) 100000 ){
-        for (int i = 0; i < AR_numsamples -1 ; i++){
+    if (micros() > cache.AR_writetime + write_interval - (unsigned long) 50000 ){
+        //for (int i = 0; i < AR_numsamples -1 ; i++){
+        for (int i = AR_pos; i < (cache.AR_write_next - cache.AR_writetime)/cache.AR_writetime ; (i+AR_numsamples -2) % (AR_numsamples-1) ){
             AR_rms += sqrt(AR_mag[i]);
         }
         AR_rms = AR_rms/AR_numsamples;
