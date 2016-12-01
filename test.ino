@@ -104,7 +104,7 @@ void loop() {
     
     int HR_posprev = ( HR_pos+ (HR_numsamples -2) ) % (HR_numsamples -1);
 
-    //collect sample set 
+    //collect sample set for HR
     if (analog_test_output2 > HR_floor){
         if ( micros() - HR_beattime[HR_posprev] > 1050  ){
             blinker.toggle(led, 200000);
@@ -112,6 +112,17 @@ void loop() {
             HR_pos = (HR_pos+1) %(HR_numsamples-1);
         }
     }
+
+    blinker.toggle(led, 0);
+    
+    //collect sample set for AR
+    if ( micros() > cache.AR_write_next+250000){
+        AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
+        AR_pos = (AR_pos+1)% (AR_numsamples-1);
+        cache.AR_write_next += 250000;
+    }
+    
+    //Write to HR cache
     if (micros() > cache.HR_writetime + write_interval - (unsigned long) 500000 ) {
         int i = HR_numsamples-1;
         for ( i; micros() > HR_beattime[i] + write_interval; (i+ HR_numsamples -2)%(HR_numsamples-1) ){
@@ -126,17 +137,8 @@ void loop() {
         cache.write( (double) 60000000/HR_bpm, FALSE ) ; //period to BPM;
         HR_bpm = 0;
     }
-    blinker.toggle(led, 0);
-    
-    if ( micros() > cache.AR_write_next+250000){
-        AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
-        AR_pos = (AR_pos+1)% (AR_numsamples-1);
-        cache.AR_write_next += 250000;
-    }
-    
-
-    if (AR_pos == HR_pos*4 -1 && AR_pos > AR_numsamples - 3) //3 is a fudge factor
-    {
+    //Write to AR cache
+    if (cache.AR_write_next > cache.AR_writetime + write_interval - (unsigned long) 100000 ){
         for (int i = 0; i < AR_numsamples -1 ; i++){
             AR_rms += sqrt(AR_mag[i]);
         }
