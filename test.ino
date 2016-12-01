@@ -128,10 +128,10 @@ void loop() {
     }
     blinker.toggle(led, 0);
     
-    
-    if ( micros() > cache.AR_writetime + 250000){
+    if ( micros() > cache.AR_write_next+250000){
         AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
         AR_pos = (AR_pos+1)% (AR_numsamples-1);
+        cache.AR_write_next += 250000;
     }
     
 
