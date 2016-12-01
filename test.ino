@@ -138,7 +138,7 @@ void loop() {
         HR_bpm = 0;
     }
     //Write to AR cache
-    if (cache.AR_write_next > cache.AR_writetime + write_interval - (unsigned long) 100000 ){
+    if (micros() > cache.AR_writetime + write_interval - (unsigned long) 100000 ){
         for (int i = 0; i < AR_numsamples -1 ; i++){
             AR_rms += sqrt(AR_mag[i]);
         }
