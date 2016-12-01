@@ -15,6 +15,7 @@ public:
 	int AR_col;
 	unsigned long HR_writetime;
 	unsigned long AR_writetime;
+	unsigned long AR_write_next;
 	unsigned long prev_uploadtime;
 	unsigned long upload_interval = 59500000;
 	
@@ -26,6 +27,7 @@ void Upload::reset(){
 	Upload temp;
 	*this = temp;
 }
+
 Upload::Upload() // default constructor
 {
     char upload[] = {0};
@@ -35,6 +37,7 @@ Upload::Upload() // default constructor
 	AR_col = 0;
 	HR_writetime =0;
 	AR_writetime =0;
+    AR_write_next =0;
 	prev_uploadtime =0;
     upload_interval = 59500000;
 }
@@ -262,6 +265,7 @@ void Upload::write(double input, bool HR_AR)
 		}
 		AR_col++;
 		AR_writetime = micros();
+		AR_write_next = AR_writetime;
 
 	}
 
