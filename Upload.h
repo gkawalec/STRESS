@@ -5,7 +5,7 @@
 class Upload{
 public:
 	Upload();
-	char upload[255];
+	char upload[255] = {0};
 	void write(double input, bool HR_AR); //will write input to correct place in char upload[], based on a value of 0 for HR and 1 for AR
 	void publish(); //publishes char upload[] to cloud
 	void reset(); //resets all the values of the class
@@ -13,6 +13,12 @@ public:
 	int AR_int;
 	int HR_col;
 	int AR_col;
+	unsigned long HR_writetime;
+	unsigned long AR_writetime;
+	unsigned long prev_uploadtime;
+	unsigned long upload_interval = 59500000;
+	
+	
 };
 
 
@@ -22,17 +28,24 @@ void Upload::reset(){
 }
 Upload::Upload() // default constructor
 {
-	char upload = { 0 };
+    char upload[] = {0};
 	HR_int = 0;
 	AR_int = 120;
 	HR_col = 0;
 	AR_col = 0;
+	HR_writetime =0;
+	AR_writetime =0;
+	prev_uploadtime =0;
+    upload_interval = 59500000;
 }
 
 void Upload::publish(){
 	// publish data here
-	//Particle.variable("Stress", upload);
-	//Particle.publish("Stress", upload);
+	if (micros() > prev_uploadtime + upload_interval){
+		Particle.variable("Stress", upload);
+	    Particle.publish("Stress", upload);
+	    prev_uploadtime = micros();
+	}
 	//delay(10000);
 
 }
@@ -143,6 +156,7 @@ void Upload::write(double input, bool HR_AR)
 			count++;
 		}
 		HR_col++;
+		HR_writetime = micros();
 	}
 	//This will write corresponding AR values (using AR_intas an index keeper
 	//
@@ -247,6 +261,7 @@ void Upload::write(double input, bool HR_AR)
 			count++;
 		}
 		AR_col++;
+		AR_writetime = micros();
 
 	}
 
@@ -259,6 +274,9 @@ void Upload::write(double input, bool HR_AR)
 		publish();
 		reset();
 	}
+
+
+
 
 
 }
