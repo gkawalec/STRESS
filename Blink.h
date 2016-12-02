@@ -1,7 +1,7 @@
 #ifndef BLINK_H
 #define BLINK_H
 
-//time in microseconds;
+//time in milliseconds;
 
 class Blink
 {
@@ -25,13 +25,13 @@ Blink::Blink() : mark(0), target(0) {}
 void Blink::toggle( int& LED ,  unsigned long LENGTH )
 {
 
-    if ( mark == 0 && micros() > target ){
-        mark = micros();
+    if ( mark == 0 && millis() > target ){
+        mark = millis();
         target = mark+LENGTH;
         digitalWrite(LED, HIGH);
         //Particle.publish("mark", "marked");
     }
-    if ( mark != 0 && micros() > target ){
+    if ( mark != 0 && millis() > target ){
         mark =0;
         target = target+LENGTH; 
         digitalWrite(LED, LOW);
