@@ -17,7 +17,7 @@ public:
 	unsigned long AR_writetime;
 	unsigned long AR_write_next;
 	unsigned long prev_uploadtime;
-	unsigned long upload_interval = 59500000;
+	unsigned long upload_interval = 59500;
 	
 	
 };
@@ -30,7 +30,6 @@ void Upload::reset(){
 
 Upload::Upload() // default constructor
 {
-    char upload[] = {0};
 	HR_int = 0;
 	AR_int = 120;
 	HR_col = 0;
@@ -39,15 +38,15 @@ Upload::Upload() // default constructor
 	AR_writetime =0;
     AR_write_next =0;
 	prev_uploadtime =0;
-    upload_interval = 59500000;
+    upload_interval = 59500;
 }
 
 bool Upload::publish(){
 	// publish data here
-	if (micros() > prev_uploadtime + upload_interval){
+	if (millis() > prev_uploadtime + upload_interval){
 		Particle.variable("Stress", upload);
 	    Particle.publish("Stress", upload);
-	    prev_uploadtime = micros();
+	    prev_uploadtime = millis();
 	    return 1;
 	}
 	return 0;
@@ -161,7 +160,7 @@ void Upload::write(double input, bool HR_AR)
 			count++;
 		}
 		HR_col++;
-		HR_writetime = micros();
+		HR_writetime = millis();
 	}
 	//This will write corresponding AR values (using AR_int as an index keeper
 	//
@@ -266,7 +265,7 @@ void Upload::write(double input, bool HR_AR)
 			count++;
 		}
 		AR_col++;
-		AR_writetime = micros();
+		AR_writetime = millis();
 		AR_write_next = AR_writetime;
 
 	}
