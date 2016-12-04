@@ -4,24 +4,27 @@
 class Segment
 {
   public:
+    Segment();
     const char accepted[35] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','L','N','O','P','R','S','T','U','W','Y',' ','_','-','\'','^'};
     const char  actual[35] = { 0xC0, 0b01111001, };
     void prime(int address);
     void prime_all();
-    void display( int digit, char symbol);
+    void display3(char []);
+    void display( int DIGIT, char symbol);
+    
+    void toggle_dp(unsigned long interval);
+    unsigned long mark =0;
+    unsigned long target =0;
     
     char tf(char symbol);
     char w_dp(char symbol);
     
-    
-    
-    
-    
-    
-    
+    char showing[3] = {1}; //all ones == digits off
     
     
 };
+
+
 
 /* 
 For an 8 bit binary digit, on the display directly throught the I2C:
@@ -38,7 +41,7 @@ For an 8 bit binary digit, on the display directly throught the I2C:
 0b11111111 = all off
 */
 
-
+Segment::Segment() {}
 
 
 
@@ -64,7 +67,23 @@ char Segment::w_dp(char symbol)
     return 0b10000000 ^ symbol;
 }
 
+void Segment::toggle_dp(unsigned long LENGTH)
+{
+    if ( mark == 0 && micros() > target ){
+        mark = micros();
+        target = mark+LENGTH;
+        display( 0, w_dp(showing[0]));
+        //Particle.publish("mark", "marked");
+    }
+    if ( mark != 0 && micros() > target ){
+        mark =0;
+        target = target+LENGTH; 
+        display(0, w_dp(showing[0]));
+        //Particle.publish("mark", "unmarked");
 
+    }
+
+}
 
 
 
@@ -93,20 +112,21 @@ void Segment::prime_all()
 }
 
 
-void display3 ( char symbols[3] ) 
+void Segment::display3 ( char symbols[3] ) 
 {
     
 }
 
-void Segment::display ( int digit , char symbol ) 
+void Segment::display ( int DIGIT , char symbol ) 
 {
         //0,1,2 digit from right to left
         //33,32,32 IO expander address per digit 
         //2,3,2 IO port set of expander per digit 
-        Wire.beginTransmission( 33 - (digit>0) );
-        Wire.write( 2 + (digit%2));
+        Wire.beginTransmission( 33 - (DIGIT>0) );
+        Wire.write( 2 + (DIGIT%2));
         Wire.write( symbol );
         Wire.endTransmission();
+        showing[DIGIT] = symbol;
 }
 
 
