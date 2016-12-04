@@ -6,18 +6,20 @@ class Segment
   public:
     Segment();
     const char accepted[35] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','L','N','O','P','R','S','T','U','W','Y',' ','_','-','\'','^'};
-    const char  actual[35] = { 0xC0, 0b01111001, };
+    const char actual[35] = {   0xC0, 0b11111001, 0b10100100, 0b10110000, 0b10011001, 0b10010010, 0b10000010,
+                                0b11111000, 0b10000000, 0b10011000, 0b10001000, 0b10000000, 0b11000110, 
+                                0xC0, 0b10000110, 0b10001110};
     void prime(int address);
     void prime_all();
-    void display3(char []);
+    void display3(const char * symbol);
     void display( int DIGIT, char symbol);
     
     void toggle_dp(unsigned long interval);
     unsigned long mark =0;
     unsigned long target =0;
     
-    char tf(char symbol);
-    char w_dp(char symbol);
+    char tf( const char symbol);
+    char w_dp( char symbol);
     
     char showing[3] = {1}; //all ones == digits off
     
@@ -46,23 +48,26 @@ Segment::Segment() {}
 
 
 
-char Segment::tf(char symbol)
+char Segment::tf( const char symbol)
 {
-    char final = 0xFF;
+    char final = 0xBF;
     int i = 0;
-    while (symbol != accepted[i] && i < 35){
+    while ( (symbol != accepted[i] ) && ( i < 35) ){
         i++;
     }
     if (symbol == accepted[i]){ 
-        final == actual[i];
+        final = actual[i];
     }
-    else
-        final = 0b10000000;
+//    else
+//       final = 0b10000000;
     
     return final;
 }
 
-char Segment::w_dp(char symbol)
+
+
+
+char Segment::w_dp( char symbol)
 {
     return 0b10000000 ^ symbol;
 }
@@ -112,9 +117,11 @@ void Segment::prime_all()
 }
 
 
-void Segment::display3 ( char symbols[3] ) 
+void Segment::display3 ( const char* symbols ) 
 {
-    
+    display(0, *(symbols +2) );
+    display(1, *(symbols +1) );
+    display(2, *(symbols) );
 }
 
 void Segment::display ( int DIGIT , char symbol ) 
@@ -124,7 +131,7 @@ void Segment::display ( int DIGIT , char symbol )
         //2,3,2 IO port set of expander per digit 
         Wire.beginTransmission( 33 - (DIGIT>0) );
         Wire.write( 2 + (DIGIT%2));
-        Wire.write( symbol );
+        Wire.write( tf(symbol) );
         Wire.endTransmission();
         showing[DIGIT] = symbol;
 }
