@@ -1,4 +1,4 @@
-SYSTEM_THREAD(ENABLED);
+//SYSTEM_THREAD(ENABLED);
 
 // This #include statement was automatically added by the Particle IDE.
 #include "Blink.h"
@@ -37,12 +37,13 @@ int analog_test_reference;
 int temp =0;
 unsigned long nower = 0;
 
-const unsigned long write_interval = 4000000;
+const unsigned long write_interval = 4000;
 const int HR_numsamples = 8;
 unsigned long HR_beattime[HR_numsamples] = {0};
 
 //to use 1.75 v and 1.55 V window
-int HR_floor = 2150;
+// 2048 = half of V_supply = 1.67 V
+int HR_floor = 2150; // 2100/1226 = 1.713 V
 int HR_ceiling = 3500;
 
 double HR_bpm = 0;
@@ -83,7 +84,7 @@ void setup() {
     
     
     
-
+    Particle.variable("Stress", cache.upload);
     //Particle.variable("write", &write, INT);
 
     //Particle.variable("HR_data", &HR_data, DOUBLE);
@@ -99,9 +100,10 @@ void loop()
 {
 
     //Read
-    analog_test_x = analogRead(PinX) - 2048;
-    analog_test_y = analogRead(PinY) - 2048;
-    analog_test_z = analogRead(PinZ) - 2048;
+    // 2048 for centre point
+    analog_test_x = (analogRead(PinX) - 2048);
+    analog_test_y = (analogRead(PinY) - 2048);
+    analog_test_z = (analogRead(PinZ) - 2048);
     
     analog_test_output2 = analogRead(HRPin2);
     analog_test_output1 = analogRead(HRPin1);
@@ -115,6 +117,7 @@ void loop()
         //HR_posprev = ( HR_pos+ (HR_numsamples -2) ) % (HR_numsamples -1);
         if ( nower - HR_beattime[HR_posprev] > 6  ){
             blinker.toggle(led, 200);
+            display.toggle_dp(200000);
             HR_beattime[HR_pos] = nower;
             
             HR_posprev= HR_pos;
@@ -124,12 +127,9 @@ void loop()
 
         }
     }
-    blinker.toggle(led, 0);
-    //Particle.variable("Upload", HR_beattime[7]);
-///////////////////////////////////////////////////////////    
-    Particle.variable("HR_test", HR_bpm );
-////////////////////////////////////////////////////////////    
     
+    //Particle.variable("Upload", HR_beattime[7]);
+
     //collect sample set for AR
     if ( nower > (cache.AR_write_next+250 ) ){
         AR_mag[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
@@ -138,48 +138,60 @@ void loop()
         
         //    Particle.publish("AR_mag","over0");
     }
-    Particle.variable("AR_test", AR_mag[AR_pos]);
-    
+
+
     
     //Write to HR cache
-    
-    if (nower > cache.HR_writetime + write_interval - (unsigned long) 50 ) {
+   
+    if (nower > (cache.HR_writetime + write_interval) ) {
+        
         int i = HR_numsamples-1;
+        //HR_bpm = 0;
         
-        for ( i; nower > HR_beattime[i] + write_interval; (i+ HR_numsamples -1)%(HR_numsamples) ){
-            HR_bpm += (HR_beattime[i]-HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)]);
-        }
-        
+        //for ( i; HR_beattime[i] > nower - write_interval; (i+ HR_numsamples -1)%(HR_numsamples) ){
+        //    HR_bpm += (HR_beattime[i]-HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)]);
+        //}
+        HR_bpm = abs(HR_beattime[HR_pos]-HR_beattime[HR_posprev]);
 
-        for ( int i = 0; i < HR_numsamples - 1; i++){
-            HR_bpm += (HR_beattime[i]-HR_beattime[i-1]);
-        }
+        //for ( int i = 0; i < HR_numsamples - 1; i++){
+        //    HR_bpm += (HR_beattime[i]-HR_beattime[i-1]);
+        //}
 
-        HR_bpm = HR_bpm/(HR_numsamples - i );
-        cache.write( (double) 60000.00/HR_bpm, FALSE ) ; //period to BPM;
+        //HR_bpm = HR_bpm/(HR_numsamples - i );
+        //cache.HR_writetime = nower;
+        cache.write( (double) 600.00/HR_bpm, FALSE ) ; //period to BPM;
         //Particle.variable("HR_upload", HR_bpm);
-        HR_bpm = 0;
+        //
+        
     }
+
+    
     
     //Write to AR cache
-    if (nower > cache.AR_writetime + write_interval - (unsigned long) 50 ){
+    if (nower > cache.AR_writetime + write_interval ){
         //for (int i = 0; i < AR_numsamples -1 ; i++){
         
-        for (int i = AR_pos; i < (cache.AR_write_next - cache.AR_writetime)/250 ; (i+AR_numsamples -1) % (AR_numsamples) ){
-            AR_rms += sqrt(AR_mag[i]);
-        }
+        //AR_rms = 0;
         
-        AR_rms = AR_rms/AR_numsamples;
+        //for (int i = AR_pos; i*250 < (cache.AR_write_next - cache.AR_writetime) ; (i+AR_numsamples -1) % (AR_numsamples) ){
+        //    AR_rms += sqrt(AR_mag[i]);
+        //}
+        
+        
+        AR_rms = sqrt(AR_mag[AR_pos]) / (409.6); //0.1*4096 is conversion factor to g == 9.81m/s
+        //cache.AR_writetime = nower;
+        //AR_rms = AR_rms/ (AR_numsamples *409.6); //0.1*4096 is conversion factor to g == 9.81m/s
         cache.write( AR_rms, TRUE);
-        AR_rms = 0;
+
+    }
+/*
+    
+    if (nower % 60000 < 100){
+        cache.publish();
+        delay(100);
     }
     
     
-    
-    delayMicroseconds(1000);
-    
-
-/*
         if ( analog_test_output2 > 370) {
         digitalWrite(led, HIGH);
         delay(500);
@@ -193,13 +205,30 @@ void loop()
     // 2000 = 1.623 V
     // test val 370 = 0.3 V    
 
-
-    display.display(0, display.tf('0'));
-    display.display(1, display.w_dp(display.tf('0')));
-    display.display(2, 0b11000000);
-//delayMicroseconds(1000); // short to find peak
-//    blinker.toggle(builtinled, 2000000);
-
+    
+    blinker.toggle(led, 0);
+    display.toggle_dp(0);
+    
+    if (nower % 500 < 100){
+        display.display(0, display.w_dp(0b11011110));
+        display.display(1, 0b10101111);
+        display.display(2, 0b11110111);
+    }
+    
+    delayMicroseconds(1000); // short to find peak
+    
+    
+    
+    
+///////////////////////////////////////////////////////////    
+   //Particle.variable("HR_test",  HR_beattime[HR_pos]);
+   //Particle.variable("HR_test", HR_bpm);
+   //Particle.variable("HR_test", (int) abs( HR_beattime[HR_pos]- HR_beattime[HR_posprev] ));
+   //Particle.variable("AR_test", AR_rms);
+///////////////////////////////////////////////////////////
+    
+    
+    
 
     
 }
