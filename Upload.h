@@ -5,9 +5,8 @@
 class Upload{
 public:
 	Upload();
-	char upload[255] = {0};
+	char upload[255];
 	void write(double input, bool HR_AR); //will write input to correct place in char upload[], based on a value of 0 for HR and 1 for AR
-	bool publish(); //publishes char upload[] to cloud, returns ture if successful, false otherwise
 	void reset(); //resets all the values of the class
 	int HR_int;
 	int AR_int;
@@ -17,19 +16,14 @@ public:
 	unsigned long AR_writetime;
 	unsigned long AR_write_next;
 	unsigned long prev_uploadtime;
-	unsigned long upload_interval = 59500;
-	
-	
+	unsigned long upload_interval;
+private:
+	bool publish(); //publishes char upload[] to cloud
 };
-
-
-void Upload::reset(){
-	Upload temp;
-	*this = temp;
-}
 
 Upload::Upload() // default constructor
 {
+    char upload[255] = {0};
 	HR_int = 0;
 	AR_int = 120;
 	HR_col = 0;
@@ -41,15 +35,30 @@ Upload::Upload() // default constructor
     upload_interval = 59500;
 }
 
+void Upload::reset(){
+	Upload temp;
+	
+	temp.HR_writetime = HR_writetime;
+	temp.AR_writetime = AR_writetime;
+	temp.AR_write_next = AR_write_next;
+	temp.prev_uploadtime = prev_uploadtime;
+	
+	*this = temp;
+	
+}
+
 bool Upload::publish(){
 	// publish data here
-	if (millis() > prev_uploadtime + upload_interval){
-		Particle.variable("Stress", upload);
+    if (millis() > prev_uploadtime + upload_interval){
+	    Particle.variable("Stress", upload);
 	    Particle.publish("Stress", upload);
 	    prev_uploadtime = millis();
-	    return 1;
-	}
-	return 0;
+	    return true;
+    }
+    else{
+        return false;
+    }
+
 	//delay(10000);
 
 }
@@ -268,24 +277,31 @@ void Upload::write(double input, bool HR_AR)
 		AR_writetime = millis();
 		AR_write_next = AR_writetime;
 
-	}
+	
 
-	if (AR_col ==15 && HR_col == 15){
-		//upload data to cloud and reset
-		while (AR_int < 255){
-			upload[AR_int] = ' ';
-			AR_int++;
-		}
+	    if (AR_col ==15 && HR_col == 15){
+		       //upload data to cloud and reset
+		    while (AR_int < 255){
+			    upload[AR_int] = '\0';
+			    AR_int++;
+		    }
+		    	
 		for(int i =0;i<5;i++){
 		    if(publish()){
 		        break;
 		    }
 		}
+		publish();
 		reset();
+	    
+		    
+	    }
+	    
 	}
-
-
-
+		
+		//publish(); // these need to move back up for final version
+		//reset();   //
+	
 
 
 }
