@@ -23,7 +23,7 @@ private:
 
 Upload::Upload() // default constructor
 {
-    char upload[255] = {0};
+    upload[255] = {0};
 	HR_int = 0;
 	AR_int = 120;
 	HR_col = 0;
