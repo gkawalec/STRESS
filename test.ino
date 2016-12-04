@@ -118,7 +118,7 @@ void loop()
         //blink();
         if ( nower - HR_beattime[HR_posprev] > 6  ){
             blinker.toggle(led, 200);
-            display.toggle_dp(200000);
+            //display.toggle_dp(200000);
             HR_beattime[HR_pos] = nower;
             
             HR_posprev= HR_pos;
@@ -136,7 +136,6 @@ void loop()
         AR_pos = (AR_pos+1) % (AR_numsamples);
         cache.AR_write_next += 250;
         
-        //    Particle.publish("AR_mag","over0");
     }
 
 
@@ -149,12 +148,18 @@ void loop()
         count = 0;
         
         //nower < HR_beattime[i] + write_interval
-        
+        // count < HR_numsamples
+        // HR_bpm < abs(nower - cache.HR_writetime)
+        //NB <= slows down 1888 bpm to 1333 bpm or + 13 microsec compared to <
         for ( int i = HR_pos; count < HR_numsamples; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
             if ( HR_beattime[i] > cache.HR_writetime) {
                 HR_bpm += abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+                count++;
             }
-            count++;
+            else{
+                break;
+            }
+
         }
         
         HR_bpm = count*60000.00/HR_bpm;
@@ -179,12 +184,9 @@ void loop()
            count++;
         //}
 
-
         HR_bpm = count*60000.00/HR_bpm;
         //cache.HR_writetime = nower;
         cache.write( HR_bpm, FALSE ) ; //period to BPM;
-
-        //
         
     }
 */
@@ -243,17 +245,27 @@ void loop()
     // test val 370 = 0.3 V    
 
     
-    if (nower % 500 < 100){
-        display.display(0, 0b11011110);
-        display.display(1, 0b10101111);
-        display.display(2, 0b11110111);
+    if (nower % 1000 < 100){
         
+        
+        //display.display(0, 0b11011110);
+        //display.display(1, 0b10101111);
+        //display.display(2, 0b11110111);
+        //display.display(1, '2');
 
+
+        //display.display(2, cache.upload[cache.HR_col*5]);
+        //display.display(1, cache.upload[cache.HR_int+1]);
+        //display.display(2, cache.upload[cache.HR_int]);
+        if (cache.HR_int > 7){
+            display.display3(&cache.upload[cache.HR_int-7]);
+        }
+  
   
     
     }
     blinker.toggle(led, 0);
-    display.toggle_dp(0);
+    //display.toggle_dp(0);
     
     delayMicroseconds(1000); // short to find peak
     
@@ -262,7 +274,7 @@ void loop()
     
 ///////////////////////////////////////////////////////////    
    //Particle.variable("HR_test",  HR_beattime[HR_pos]);
-   Particle.variable("HR_test", HR_bpm);
+   //Particle.variable("HR_test", HR_bpm);
    //Particle.variable("HR_test", (int) abs( HR_beattime[HR_pos]- HR_beattime[HR_posprev] ));
    //Particle.variable("AR_test", AR_rms);
 ///////////////////////////////////////////////////////////
