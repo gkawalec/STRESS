@@ -176,10 +176,10 @@ void Upload::write(double input, bool HR_AR)
 	//
 	else{
 		int count = 0;
-		if (input >= 10000){ // values in excess of 10,000 will write an error message
+		if (input >= 100){ // values in excess of 10,000 will write an error message
 			input = -10000;
 		}
-		if (input == 0 || (input < 0.01&& input >0)){
+		if (input == 0 || (input < 0.0001&& input >0)){
 			upload[AR_int] = '0';
 			AR_int++;
 			count++;
@@ -248,14 +248,31 @@ void Upload::write(double input, bool HR_AR)
 			int temp = (int)(input * 10);
 			upload[AR_int] = '.';
 			upload[++AR_int] = 48 + temp;
-			input = input * 100 - temp * 10;
+			input = input * 10 - temp;
 			count += 2;
 			AR_int++;
 			if (input != 0){
-				upload[AR_int] = 48 + (int)input;
+				int temp1 = (int)(input * 10);
+				upload[AR_int] = 48 + temp1;
+				input = input * 10 - temp1;
 				count++;
 				AR_int++;
 			}
+			if (input != 0){
+				int temp1 = (int)(input * 10);
+				upload[AR_int] = 48 + temp1;
+				input = input * 10 - temp1;
+				count++;
+				AR_int++;
+			}
+			if (input != 0){
+				int temp1 = (int)(input * 10);
+				upload[AR_int] = 48 + temp1;
+				input = input * 10 - temp1;
+				count++;
+				AR_int++;
+			}
+
 		}
 		if (input < 0){ //Negative values will give an error message
 			upload[AR_int] = 'E';
