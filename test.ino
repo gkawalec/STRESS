@@ -38,7 +38,7 @@ int temp =0;
 unsigned long nower = 0;
 
 const unsigned long write_interval = 4000;
-const int HR_numsamples = 8;
+const int HR_numsamples = 20;
 unsigned long HR_beattime[HR_numsamples] = {0};
 
 //to use 1.75 v and 1.55 V window
@@ -55,6 +55,7 @@ const int AR_numsamples = HR_numsamples*4;
 double AR_sq[AR_numsamples] = {0};
 double AR_rms = 0;
 int AR_pos = 0;
+int count =0;
 
 
 void blink();
@@ -115,7 +116,6 @@ void loop()
     //collect sample set for HR
     if (analog_test_output2 > HR_floor){
         //blink();
-        //HR_posprev = ( HR_pos+ (HR_numsamples -2) ) % (HR_numsamples -1);
         if ( nower - HR_beattime[HR_posprev] > 6  ){
             blinker.toggle(led, 200);
             display.toggle_dp(200000);
@@ -142,39 +142,52 @@ void loop()
 
     
     //Write to HR cache
-  /* 
+
+    if (nower > cache.HR_writetime + write_interval ) {
+        
+        HR_bpm = 0;
+        count = 0;
+        
+        //nower < HR_beattime[i] + write_interval
+        
+        for ( int i = HR_pos; count < HR_numsamples; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
+            if ( HR_beattime[i] > cache.HR_writetime) {
+                HR_bpm += abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+            }
+            count++;
+        }
+        
+        HR_bpm = count*60000.00/HR_bpm;
+        
+        cache.write( HR_bpm, FALSE ) ; //period to BPM;
+
+    }
+  
+
+
+/*
+    // HR cache collection test
     if (nower > (cache.HR_writetime + write_interval) ) {
         
-        int i = HR_pos;
-        HR_bpm = 0;
         
-        for ( i; HR_beattime[i] > nower - write_interval; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
-           HR_bpm += (double)  HR_beattime[i]-HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] ;
-        }
-        //HR_bpm = abs(HR_beattime[HR_pos]-HR_beattime[HR_posprev]);
-
-        //for ( int i = 0; i < HR_numsamples - 1; i++){
-        //    HR_bpm += (HR_beattime[i]-HR_beattime[i-1]);
+        HR_bpm = 0;
+        int count = 0;
+        int i = HR_pos;
+        
+        //for ( int i = HR_pos; nower > HR_beattime[i] + write_interval; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
+           HR_bpm += abs( HR_beattime[i]- HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+           count++;
         //}
 
-        HR_bpm = HR_bpm/(HR_numsamples - 1 );
+
+        HR_bpm = count*60000.00/HR_bpm;
         //cache.HR_writetime = nower;
-        cache.write( (double) 600.00/HR_bpm, FALSE ) ; //period to BPM;
-        //Particle.variable("HR_upload", HR_bpm);
+        cache.write( HR_bpm, FALSE ) ; //period to BPM;
+
         //
-
         
     }
-  */
-    
-    if (nower > (cache.HR_writetime + write_interval) ) {
-        
-        HR_bpm = abs(HR_beattime[HR_pos]-HR_beattime[HR_posprev]);
-
-        cache.write( (double) 600.00/HR_bpm, FALSE ) ; //period to BPM;
-        
-    }
-    
+*/
     
     //Write to AR cache
     
@@ -182,24 +195,24 @@ void loop()
         //for (int i = 0; i < AR_numsamples -1 ; i++){
         
         AR_rms = 0;
-        int count =0;
+        count =0;
+        
         for (int i = AR_pos; count*250 < abs(cache.AR_write_next - cache.AR_writetime); i= (i+AR_numsamples -1) % (AR_numsamples) ){
             AR_rms += sqrt(AR_sq[i]);
             count++;
         }
         
-        
-        AR_rms = AR_rms / (count * 409.6 *1.0432); //0.1*4096 is conversion factor to g == 9.81m/s; 1.0432 for chip specfic error 
-        //cache.AR_writetime = nower;
-        //AR_rms = AR_rms/ (AR_numsamples *409.6); //0.1*4096 is conversion factor to g == 9.81m/s
+        AR_rms = AR_rms / (count * 409.6 *1.0432); //0.1*4096 is conversion factor to g == 9.81m/s; 1.0432 for chip specfic error and Cal Gravity
+
         cache.write( AR_rms, TRUE);
 
     }
     
+    //AR cache collection test
     /*
     if (nower > cache.AR_writetime + write_interval ){
         
-        AR_rms = sqrt(AR_sq[AR_pos]) / (409.6 *1.0432); //0.1*4096 is conversion factor to g == 9.81m/s; 0.9585 for chip specfic error 
+        AR_rms = sqrt(AR_sq[AR_pos]) / (409.6 *1.0432); //0.1*4096 is conversion factor to g == 9.81m/s; 1.0432 for chip specfic error 
 
         cache.write( AR_rms, TRUE);
 
