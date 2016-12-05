@@ -43,8 +43,9 @@ unsigned long HR_beattime[HR_numsamples] = {0};
 
 //to use 1.75 v and 1.55 V window
 // 2048 = half of V_supply = 1.67 V
-int HR_floor = 2150; // 2100/1226 = 1.713 V
-int HR_ceiling = 3500;
+int HR_high = 2160; // 2100/1226 = 1.713 V
+int HR_low = 1960;
+bool lowed = false;
 
 double HR_bpm = 0;
 int HR_pos = 1;
@@ -114,24 +115,48 @@ void loop()
     nower = millis();
     
     //collect sample set for HR
-    if (analog_test_output2 > HR_floor){
+    //analog_test_output2 < HR_low ||
+    //if ( analog_test_output2 > HR_high){
+    if ( analog_test_output2 < HR_low){
         //blink();
-        if ( nower - HR_beattime[HR_posprev] > 6  ){
+        if ( nower  > HR_beattime[HR_posprev] ){
             blinker.toggle(led, 200);
             //display.toggle_dp(200000);
             HR_beattime[HR_pos] = nower;
             
             HR_posprev= HR_pos;
-            HR_pos = (HR_pos+1) %(HR_numsamples);
+            HR_pos = (HR_pos +1) %(HR_numsamples);
             
-            
-
+            lowed == false;
         }
     }
     
-
+    
+    
+    
+    /*
+    if (analog_test_output2 < HR_low){
+        lowed = true;
+    }
+    
+    if (analog_test_output2 > HR_high && lowed == true){
+        //blink();
+        //if ( nower  > (unsigned long) 4 + HR_beattime[HR_posprev] ){
+            blinker.toggle(led, 200);
+            //display.toggle_dp(200000);
+            HR_beattime[HR_pos] = nower;
+            
+            HR_posprev= HR_pos;
+            HR_pos = (HR_pos +1) %(HR_numsamples);
+            
+            lowed == false;
+        //}
+    }
+    */
+    
+    
     //collect sample set for AR
-    if ( nower > (cache.AR_write_next+250 ) ){
+    if ( nower > (cache.AR_write_next + 250 ) ){
         AR_sq[AR_pos] = pow(analog_test_x,2)+pow(analog_test_y,2)+pow(analog_test_z,2);
         AR_pos = (AR_pos+1) % (AR_numsamples);
         cache.AR_write_next += 250;
@@ -152,17 +177,24 @@ void loop()
         // HR_bpm < abs(nower - cache.HR_writetime)
         //NB <= slows down 1888 bpm to 1333 bpm or + 13 microsec compared to <
         for ( int i = HR_pos; count < HR_numsamples; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
-            if ( HR_beattime[i] > cache.HR_writetime) {
-                HR_bpm += abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+            //if ( HR_beattime[i] > cache.HR_writetime) {
+            int delta =  abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+            //int deltaprev = abs( HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] - HR_beattime[(i+ HR_numsamples -2)%(HR_numsamples)] );
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////while( delta + 250 > (deltaprev << 1 ) )
+            while( delta > 1500) {
+                delta = delta /2 ;
+            } //one missed peak correction
+                
+                //HR_bpm += abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+                HR_bpm += delta;
                 count++;
-            }
-            else{
-                break;
-            }
-
+            //}
+            //else{
+                //break;
+            //}
         }
         
-        HR_bpm = count*60000.00/HR_bpm;
+        HR_bpm = count*6000.00/HR_bpm;
         
         cache.write( HR_bpm, FALSE ) ; //period to BPM;
 
@@ -245,7 +277,7 @@ void loop()
     // test val 370 = 0.3 V    
 
     
-    if (nower % 1000 < 100){
+    if (nower % 512 < 64){
         
         
         //display.display(0, 0b11011110);
@@ -257,13 +289,13 @@ void loop()
         //display.display(2, cache.upload[cache.HR_col*5]);
         //display.display(1, cache.upload[cache.HR_int+1]);
         //display.display(2, cache.upload[cache.HR_int]);
-        if (cache.HR_int > 7){
-            display.display3(&cache.upload[cache.HR_int-7]);
+        
+        ////////////////////////////////////////////////////////if (cache.upload[cache.HR_int] == '.')
+        if (cache.HR_int > 9){
+            display.display3(&cache.upload[cache.HR_int-9]);
         }
-  
-  
-    
     }
+    
     blinker.toggle(led, 0);
     //display.toggle_dp(0);
     
@@ -275,7 +307,7 @@ void loop()
 ///////////////////////////////////////////////////////////    
    //Particle.variable("HR_test",  HR_beattime[HR_pos]);
    //Particle.variable("HR_test", HR_bpm);
-   //Particle.variable("HR_test", (int) abs( HR_beattime[HR_pos]- HR_beattime[HR_posprev] ));
+   Particle.variable("HR_test", (int) abs( HR_beattime[HR_pos]- HR_beattime[HR_posprev] ));
    //Particle.variable("AR_test", AR_rms);
 ///////////////////////////////////////////////////////////
     
