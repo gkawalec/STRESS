@@ -71,7 +71,7 @@ void Upload::write(double input, bool HR_AR)
 	//
 	if (HR_AR==false){
 		int count = 0;
-		if (input >= 10000){ // values in excess of 10,000 will write an error message
+		if (input >= 5000){ // values in excess of 5,000 will write an error message
 			input = -10000;
 		}
 		if (input == 0 || (input < 0.01&& input >0)){
@@ -174,7 +174,7 @@ void Upload::write(double input, bool HR_AR)
 	//This will write corresponding AR values (using AR_int as an index keeper
 	//
 	//
-	else{
+	else if (AR_col < HR_col && HR_AR == true) {
 		int count = 0;
 		if (input >= 100){ // values in excess of 10,000 will write an error message
 			input = -10000;
