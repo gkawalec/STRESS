@@ -117,7 +117,32 @@ void loop()
     //collect sample set for HR
     //analog_test_output2 < HR_low ||
     //if ( analog_test_output2 > HR_high){
-    if ( analog_test_output2 < HR_low){
+    
+    
+    if ( analog_test_output2 > HR_high){
+        //blink();
+        //if ( nower  > HR_beattime[HR_posprev]){
+            
+            //blink();
+            blinker.toggle(led, 100);
+            //display.toggle_dp(200000);
+            HR_beattime[HR_pos] = nower;
+            
+            HR_posprev= HR_pos;
+            HR_pos = (HR_pos +1) %(HR_numsamples);
+        //}
+    }
+    
+    
+    
+    
+    /*
+    
+    if (analog_test_output2 < HR_low){
+        lowed = true;
+    }
+    
+    if (analog_test_output2 > HR_high && lowed == true){
         //blink();
         if ( nower  > HR_beattime[HR_posprev] ){
             blinker.toggle(led, 200);
@@ -131,28 +156,12 @@ void loop()
         }
     }
     
-    
-    
-    
-    /*
-    if (analog_test_output2 < HR_low){
-        lowed = true;
-    }
-    
-    if (analog_test_output2 > HR_high && lowed == true){
-        //blink();
-        //if ( nower  > (unsigned long) 4 + HR_beattime[HR_posprev] ){
-            blinker.toggle(led, 200);
-            //display.toggle_dp(200000);
-            HR_beattime[HR_pos] = nower;
-            
-            HR_posprev= HR_pos;
-            HR_pos = (HR_pos +1) %(HR_numsamples);
-            
-            lowed == false;
-        //}
-    }
     */
+    
+    blinker.toggle(led, 0);
+    //display.toggle_dp(0);
+    
+
     
     
     //collect sample set for AR
@@ -167,6 +176,7 @@ void loop()
     
     //Write to HR cache
 
+
     if (nower > cache.HR_writetime + write_interval ) {
         
         HR_bpm = 0;
@@ -176,25 +186,29 @@ void loop()
         // count < HR_numsamples
         // HR_bpm < abs(nower - cache.HR_writetime)
         //NB <= slows down 1888 bpm to 1333 bpm or + 13 microsec compared to <
-        for ( int i = HR_pos; count < HR_numsamples; i= (i+ HR_numsamples -1)%(HR_numsamples) ){
+        for ( int i = HR_pos; count < HR_numsamples; i= (i+ HR_numsamples - 1)%(HR_numsamples) ){
             //if ( HR_beattime[i] > cache.HR_writetime) {
-            int delta =  abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
+                int delta =  abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples - 1)%(HR_numsamples)] );
             //int deltaprev = abs( HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] - HR_beattime[(i+ HR_numsamples -2)%(HR_numsamples)] );
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////while( delta + 250 > (deltaprev << 1 ) )
-            while( delta > 1500) {
-                delta = delta /2 ;
-            } //one missed peak correction
+           ///////////////////////////////////////////////////while( delta + 250 > (deltaprev << 1 ) )
+                while( delta > 1512) { //ifrun once, while for more
+                    //delta = delta / 2;
+                    delta = delta / ((delta >>10) + 1);
+                    
+                } // missed peak correction assuming ~ 60bpm average
+                if (delta < 25){ //hi freq noise elim caps to 240 bpm
+                    delta = 25;
+                }
                 
-                //HR_bpm += abs( HR_beattime[i] - HR_beattime[(i+ HR_numsamples -1)%(HR_numsamples)] );
                 HR_bpm += delta;
                 count++;
             //}
             //else{
-                //break;
+            //    break;
             //}
         }
         
-        HR_bpm = count*6000.00/HR_bpm;
+        HR_bpm = (count+5)*6000.00/(HR_bpm *1.00); //plus 2 for first beat and last beat
         
         cache.write( HR_bpm, FALSE ) ; //period to BPM;
 
@@ -222,7 +236,8 @@ void loop()
         
     }
 */
-    
+
+
     //Write to AR cache
     
     if (nower > cache.AR_writetime + write_interval ){
@@ -239,8 +254,18 @@ void loop()
         AR_rms = AR_rms / (count * 409.6 *1.0432); //0.1*4096 is conversion factor to g == 9.81m/s; 1.0432 for chip specfic error and Cal Gravity
 
         cache.write( AR_rms, TRUE);
+        
+        //display code 
+        if (cache.HR_int > 9){
+            display.display3(&cache.upload[cache.HR_int-7 + ( cache.upload[cache.HR_int-6] != '.' )]); //!= '.' shifts display if record has a hundreds digit
+        }
+
+
 
     }
+    
+    
+    
     
     //AR cache collection test
     /*
@@ -255,30 +280,14 @@ void loop()
     */
     
     
-/*
-    
-    if (nower % 60000 < 100){
-        cache.publish();
-        delay(100);
-    }
-    
-    
-        if ( analog_test_output2 > 370) {
-        digitalWrite(led, HIGH);
-        delay(500);
-    }
-    if ( analog_test_output2 <= 370) {
-        digitalWrite(led, LOW);
-    }
-*/
     //LED test
     //pin_blink_led(analog_test_output2, 2400, 3500, led);
     // 2000 = 1.623 V
     // test val 370 = 0.3 V    
 
     
-    if (nower % 512 < 64){
-        
+    //if (nower % 512 < 64){
+    //if ( nower > (cache.AR_write_next + 250 ) ){    //might change +250
         
         //display.display(0, 0b11011110);
         //display.display(1, 0b10101111);
@@ -291,15 +300,10 @@ void loop()
         //display.display(2, cache.upload[cache.HR_int]);
         
         ////////////////////////////////////////////////////////if (cache.upload[cache.HR_int] == '.')
-        if (cache.HR_int > 9){
-            display.display3(&cache.upload[cache.HR_int-9]);
-        }
-    }
+
+    //}
     
-    blinker.toggle(led, 0);
-    //display.toggle_dp(0);
-    
-    delayMicroseconds(1000); // short to find peak
+    delay(1); // short to find peak
     
     
     
@@ -322,7 +326,7 @@ void blink ()
     if ( blinking == false ) {		
         blinking = true;		
         digitalWrite(led, HIGH);		
-        delay(200);		
+        delay(100);		
         digitalWrite(led, LOW);		
     }		
 }
