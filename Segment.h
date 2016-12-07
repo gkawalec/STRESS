@@ -5,10 +5,10 @@ class Segment
 {
   public:
     Segment();
-    const char accepted[35] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','L','N','O','P','R','S','T','U','W','Y',' ','_','-','\'','^'};
+    const char accepted[35] = {'0','1','2','3','4','5','6','7','8','9',' ','A','B','C','D','E','F','G','H','I','J','L','N','O','P','R','S','T','U','W','Y','_','-','\'','^'};
     const char actual[35] = {   0xC0, 0b11111001, 0b10100100, 0b10110000, 0b10011001, 0b10010010, 0b10000010,
-                                0b11111000, 0b10000000, 0b10011000, 0b10001000, 0b10000000, 0b11000110, 
-                                0xC0, 0b10000110, 0b10001110};
+                                0b11111000, 0b10000000, 0b10011000, 0b11111111, 0b10001000, 0b10000000, 
+                                0b11000110, 0xC0, 0b10000110, 0b10001110};
     void prime(int address);
     void prime_all();
     void display3(const char * symbol);
@@ -50,7 +50,7 @@ Segment::Segment() {}
 
 char Segment::tf( const char symbol)
 {
-    char final = 0xBF;
+    char final = 0b11111111;
     int i = 0;
     while ( (symbol != accepted[i] ) && ( i < 35) ){
         i++;
@@ -119,9 +119,9 @@ void Segment::prime_all()
 
 void Segment::display3 ( const char* symbols ) 
 {
-    display(0, *(symbols +2) );
-    display(1, *(symbols +1) );
-    display(2, *(symbols) );
+    display(0, *(symbols ) );
+    display(1, *(symbols -1) );
+    display(2, *(symbols -2) );
 }
 
 void Segment::display ( int DIGIT , char symbol ) 
